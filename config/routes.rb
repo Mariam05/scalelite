@@ -27,6 +27,17 @@ Rails.application.routes.draw do
       match('updateRecordings', to: 'bigbluebutton_api#update_recordings', as: :update_recordings, via: [:get, :post])
       match('deleteRecordings', to: 'bigbluebutton_api#delete_recordings', as: :delete_recordings, via: [:get, :post])
     end
+
+    namespace :api do
+      namespace :v1 do
+        resources :servers, only: [:index, :create, :update, :destroy] do
+          member do
+            post 'panic'
+          end
+        end
+        get 'servers/meeting_list', to: 'servers#meeting_list'
+      end
+    end
   end
 
   get('health_check', to: 'health_check#index')
