@@ -36,6 +36,8 @@ Rails.application.routes.draw do
           end
         end
         get 'servers/meeting_list', to: 'servers#meeting_list'
+
+        resources :tenants, only: [:index, :show, :create, :destroy]
       end
     end
   end
