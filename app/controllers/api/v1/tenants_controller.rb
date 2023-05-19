@@ -6,7 +6,7 @@ module Api
       skip_before_action :verify_authenticity_token
 
       before_action :check_multitenancy
-      before_action :set_tenant, only: [:show, :destroy]
+      before_action :set_tenant, only: [:show, :update, :destroy]
 
       # Return a list of all tenants
       # GET /bigbluebutton/api/api/v1/tenants
@@ -71,6 +71,25 @@ module Api
           tenant = Tenant.create(tenant_params)
           render json: { message: 'OK', id: tenant.id }, status: :created
         end
+      end
+
+      # Update a tenant
+      # PUT api/v1/tenants/:id?name=xxx || PUT api/v1/tenants/:id?secrets=xxx
+      #
+      # Expected params:
+      # {
+      #   "tenant": {
+      #     "name": String,     # include the parameter you want updated
+      #     "secrets": String
+      #   }
+      # }
+      def update
+        @tenant.name = tenant_params[:name] if tenant_params[:name].present?
+        @tenant.secrets = tenant_params[:secrets] if tenant_params[:secrets].present?
+        @tenant.save!
+        render json: { message: 'OK' }, status: :ok
+      rescue ApplicationRedisRecord::RecordNotSaved => e
+        render json: { error: e.message }, status: :unprocessable_entity
       end
 
       # Delete tenant

@@ -37,6 +37,7 @@ RSpec.describe Api::V1::TenantsController, type: :controller do
             it 'returns nil if multitenancy is disabled' do
                 Rails.configuration.x.multitenancy_enabled = false
                 get :index
+                expect(response).to have_http_status(:precondition_failed)
                 expect(response.parsed_body['message']).to eq('Multitenancy is disabled')
             end
         end
@@ -95,6 +96,30 @@ RSpec.describe Api::V1::TenantsController, type: :controller do
                 expect(response).to have_http_status(:unprocessable_entity)
                 expect(response.parsed_body['message']).to eq('Error: both name and secrets are required to create a Tenant')
             end
+        end
+    end
+
+    describe 'PATCH #update' do
+        before do
+            Rails.configuration.x.multitenancy_enabled = true
+        end
+
+        it 'updates a tenant name' do
+            tenant = create(:tenant)
+            new_tenant_params = { name: 'new-name' }
+            patch :update, params: { id: tenant.id, tenant: new_tenant_params }
+            expect(response).to have_http_status(:ok)
+            expect(Tenant.find(tenant.id).name).to eq('new-name') # check that the id-> name index was updated
+            expect(Tenant.find_by_name('new-name')).not_to be_nil # check that the new name->id index has been added
+            expect(Tenant.find_by_name(tenant.name)).to be_nil # check that the old name->id index has been deleted
+        end
+
+        it 'updates a tenant secret' do
+            tenant = create(:tenant)
+            new_tenant_params = { secrets: 'new-secret' }
+            patch :update, params: { id: tenant.id, tenant: new_tenant_params }
+            expect(response).to have_http_status(:ok)
+            expect(Tenant.find(tenant.id).secrets).to eq('new-secret') # check that the id-> secret index was updated
         end
     end
 
